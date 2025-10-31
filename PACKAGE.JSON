@@ -1,0 +1,20 @@
+{
+  "name": "iot-control-unit",
+  "version": "1.0.0",
+  "description": "IoT Control Unit for Vehicle Telematics",
+  "main": "control-unit-iot.js",
+  "scripts": {
+    "start": "node control-unit-iot.js",
+    "dev": "nodemon control-unit-iot.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "mqtt": "^5.3.5",
+    "serialport": "^12.0.0",
+    "@serialport/parser-readline": "^12.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
