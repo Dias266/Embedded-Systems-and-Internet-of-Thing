@@ -7,11 +7,8 @@
  */
 
 #include <LiquidCrystal.h>
-#include <sha256.h>
 
-// ============================================================================
 // PIN DEFINITIONS
-// ============================================================================
 
 // LCD (16x2) pins: RS, E, D4, D5, D6, D7
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
@@ -21,9 +18,7 @@ LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 #define LED_INVALID 8
 #define LED_ERROR 9
 
-// ============================================================================
 // CONFIGURATION
-// ============================================================================
 
 const char* EXPECTED_VIN = "1HGCM82633A123456";
 
@@ -38,12 +33,10 @@ enum DisplayState {
 
 DisplayState currentDisplayState = STATE_WAITING;
 
-// ============================================================================
 // SETUP
-// ============================================================================
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600); // Match control unit baud rate
   
   // Initialize LCD
   lcd.begin(16, 2);
@@ -51,7 +44,7 @@ void setup() {
   lcd.setCursor(0, 0);
   lcd.print("Auth Controller");
   lcd.setCursor(0, 1);
-  lcd.print("Waiting...");
+  lcd.print("Waiting");
   
   // Initialize LEDs
   pinMode(LED_VALID, OUTPUT);
@@ -69,12 +62,10 @@ void setup() {
   delay(200);
   digitalWrite(LED_ERROR, LOW);
   
-  Serial.println("✅ Arduino Authentication Controller Ready");
+  Serial.println("Arduino Authentication Controller Ready");
 }
 
-// ============================================================================
 // MAIN LOOP
-// ============================================================================
 
 void loop() {
   if (Serial.available() > 0) {
@@ -86,7 +77,7 @@ void loop() {
       String packet = incomingData.substring(7);
       
       currentDisplayState = STATE_AUTHENTICATING;
-      updateDisplay("Authenticating", "Please wait...");
+      updateDisplay("Authenticating", "Please wait!");
       
       // Verify signature
       bool isValid = verifySignature(packet);
@@ -95,8 +86,13 @@ void loop() {
         currentDisplayState = STATE_VALID;
         // Extract temperature for display
         float temp = extractTemperature(packet);
-        String tempStr = "T:" + String(temp, 1) + "C";
-        updateDisplay("AUTH: VALID", tempStr);
+
+        // Format temperature string
+        char tempStr[10];
+        dtostrf(temp, 4, 1, tempStr);
+        String displayStr = "T:" + String(tempStr) + "C";
+        
+        updateDisplay("AUTH: VALID", displayStr);
         
         digitalWrite(LED_VALID, HIGH);
         digitalWrite(LED_INVALID, LOW);
@@ -126,15 +122,13 @@ void loop() {
   }
 }
 
-// ============================================================================
 // SIGNATURE VERIFICATION
-// ============================================================================
 
 bool verifySignature(String packet) {
   // Parse packet: telemetry|SIG:signature
   int sigIndex = packet.indexOf("|SIG:");
   if (sigIndex == -1) {
-    Serial.println("❌ No signature found");
+    Serial.println("No signature found");
     return false;
   }
   
@@ -144,7 +138,7 @@ bool verifySignature(String packet) {
   // Verify VIN
   int vinIndex = telemetryData.indexOf("VIN:");
   if (vinIndex == -1) {
-    Serial.println("❌ No VIN found");
+    Serial.println("No VIN found");
     return false;
   }
   
@@ -152,7 +146,7 @@ bool verifySignature(String packet) {
   String vin = telemetryData.substring(vinIndex + 4, vinEnd);
   
   if (vin != String(EXPECTED_VIN)) {
-    Serial.println("❌ VIN mismatch: " + vin);
+    Serial.println("VIN mismatch: " + vin);
     return false;
   }
   
@@ -163,36 +157,26 @@ bool verifySignature(String packet) {
   // Compare signatures
   bool isValid = (computedSignature == receivedSignature);
   
-  Serial.println("🔐 Signature verification: " + String(isValid ? "VALID" : "INVALID"));
+  Serial.println("Signature: " + String(isValid ? "VALID" : "INVALID"));
   
   return isValid;
 }
 
 String computeSignature(String data) {
-  // Use SHA256 (simplified version of ECDSA)
-  Sha256 sha256;
-  sha256.init();
+  // DJB2 hash algorithm - simple but effective
+  unsigned long hash = 5381;
   
   for (unsigned int i = 0; i < data.length(); i++) {
-    sha256.write(data[i]);
+    hash = ((hash << 5) + hash) + data[i]; // hash * 33 + c
   }
-  
-  uint8_t* hash = sha256.result();
-  
-  // Convert to hex string
-  String signature = "";
-  for (int i = 0; i < 32; i++) {
-    char hex[3];
-    sprintf(hex, "%02x", hash[i]);
-    signature += String(hex);
-  }
-  
-  return signature;
+    
+  // Convert to hex string (8 characters)
+  char hashStr[9];
+  sprintf(hashStr, "%08lx", hash);
+  return String(hashStr);
 }
-
-// ============================================================================
+  
 // HELPER FUNCTIONS
-// ============================================================================
 
 float extractTemperature(String packet) {
   int tempIndex = packet.indexOf("TEMP:");
