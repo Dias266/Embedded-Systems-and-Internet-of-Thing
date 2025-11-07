@@ -11,25 +11,22 @@
 #include <PubSubClient.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
-#include <mbedtls/md.h>
-#include <mbedtls/pk.h>
+#include "config.h"
 
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
+// CONFIGURATION - Using config.h
 
 // WiFi credentials
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
+const char* ssid = WIFI_SSID;
+const char* password = WIFI_PASSWORD;
 
-// MQTT Configuration
-const char* mqtt_server = "localhost"; // Change to your Control Unit IP
-const int mqtt_port = 1883;
-const char* mqtt_topic_telemetry = "vehicle/telemetry";
-const char* mqtt_topic_state = "vehicle/state";
+// MQTT Configuration FIXED Use IP Adress not "localhost"
+const char* mqtt_server = MQTT_BROKER;
+const int mqtt_port = MQTT_PORT;
+const char* mqtt_topic_telemetry = MQTT_TOPIC_TELEMETRY;
+const char* mqtt_topic_state = MQTT_TOPIC_STATE;
 
 // VIN Configuration (for signing)
-const char* VEHICLE_VIN = "1HGCM82633A123456";
+const char* VEHICLE_VIN = TEST_VIN;
 
 // Temperature sensor
 #define ONE_WIRE_BUS 4
@@ -38,17 +35,15 @@ const char* VEHICLE_VIN = "1HGCM82633A123456";
 #define LED_CRITICAL 18
 
 // Temperature thresholds
-#define TEMP_THRESHOLD_WARNING 30.0
-#define TEMP_THRESHOLD_CRITICAL 40.0
+#define TEMP_THRESHOLD_WARNING TEMP_NORMAL
+#define TEMP_THRESHOLD_CRITICAL TEMP_WARNING
 
-// Sampling frequencies (milliseconds)
-#define FREQUENCY_NORMAL 5000     // 5 seconds
-#define FREQUENCY_WARNING 2000    // 2 seconds
-#define FREQUENCY_CRITICAL 1000   // 1 second
+// Sampling frequencies 
+#define FREQUENCY_NORMAL FREQ_NORMAL
+#define FREQUENCY_WARNING FREQ_WARNING
+#define FREQUENCY_CRITICAL FREQ_CRITICAL
 
-// ============================================================================
 // GLOBAL VARIABLES
-// ============================================================================
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
@@ -72,10 +67,7 @@ float currentTemperature = 0.0;
 unsigned long currentMileage = 45000; // Simulated
 String diagnosticCodes = "";
 
-// ============================================================================
 // SETUP
-// ============================================================================
-
 void setup() {
   Serial.begin(115200);
   
@@ -95,15 +87,13 @@ void setup() {
   mqttClient.setCallback(mqttCallback);
   connectToMQTT();
   
-  Serial.println("✅ ESP32 Telematics Device Initialized");
+  Serial.println("ESP32 Telematics Device Initialized");
   Serial.println("VIN: " + String(VEHICLE_VIN));
   
   updateLEDs();
 }
 
-// ============================================================================
 // MAIN LOOP
-// ============================================================================
 
 void loop() {
   // Maintain MQTT connection
@@ -132,14 +122,12 @@ void loop() {
     // Publish to MQTT
     mqttClient.publish(mqtt_topic_telemetry, signedPacket.c_str());
     
-    Serial.println("📡 Telemetry sent: " + telemetryData);
-    Serial.println("🔐 Signature: " + signature.substring(0, 16) + "...");
+    Serial.println("Telemetry sent: " + telemetryData);
+    Serial.println("Signature: " + signature.substring(0, 16) + "...");
   }
 }
 
-// ============================================================================
 // WIFI CONNECTION
-// ============================================================================
 
 void connectToWiFi() {
   Serial.print("Connecting to WiFi");
@@ -153,31 +141,33 @@ void connectToWiFi() {
   }
   
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\n✅ WiFi connected");
+    Serial.println("\nWiFi connected");
     Serial.println("IP: " + WiFi.localIP().toString());
     digitalWrite(LED_NORMAL, HIGH);
+    delay(1000);
+    digitalWrite(LED_NORMAL, LOW);
   } else {
-    Serial.println("\n❌ WiFi connection failed");
+    Serial.println("\nWiFi connection failed");
+    Serial.println("Check your SSID and password in config.h");
     digitalWrite(LED_CRITICAL, HIGH);
   }
 }
 
-// ============================================================================
 // MQTT CONNECTION
-// ============================================================================
 
 void connectToMQTT() {
   while (!mqttClient.connected()) {
-    Serial.print("Connecting to MQTT...");
+    Serial.print("Connecting to MQTT");
     
     String clientId = "ESP32_" + String(VEHICLE_VIN);
     
     if (mqttClient.connect(clientId.c_str())) {
-      Serial.println("✅ MQTT connected");
+      Serial.println("MQTT connected");
       mqttClient.subscribe(mqtt_topic_state);
     } else {
-      Serial.print("❌ MQTT failed, rc=");
+      Serial.print("MQTT failed, rc=");
       Serial.println(mqttClient.state());
+      Serial.println("Check MQTT_BROKER IP in config.h");
       delay(2000);
     }
   }
@@ -185,11 +175,11 @@ void connectToMQTT() {
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
   String message = "";
-  for (int i = 0; i < length; i++) {
+  for (unsigned int i = 0; i < length; i++) {
     message += (char)payload[i];
   }
   
-  Serial.println("📥 MQTT received: " + message);
+  Serial.println("MQTT received: " + message);
   
   // Handle state updates from Control Unit
   if (message == "NORMAL") {
@@ -206,14 +196,18 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   updateLEDs();
 }
 
-// ============================================================================
 // TELEMETRY DATA COLLECTION
-// ============================================================================
 
 void collectTelemetryData() {
   // Read temperature from DS18B20
   sensors.requestTemperatures();
   currentTemperature = sensors.getTempCByIndex(0);
+
+  // Check for sensor errors
+  if (currentTemperature == -127.0 || currentTemperature == 85.0) {
+    Serial.println("Temperature sensor error!");
+    currentTemperature = 25.0; // Use default value
+  }
   
   // Simulate OBD-II data
   currentMileage += random(0, 2); // Increment mileage slightly
@@ -226,16 +220,14 @@ void collectTelemetryData() {
     diagnosticCodes = "";
   }
   
-  Serial.println("🌡️  Temperature: " + String(currentTemperature) + "°C");
-  Serial.println("🚗 Mileage: " + String(currentMileage) + " km");
+  Serial.println("Temperature: " + String(currentTemperature) + "°C");
+  Serial.println("Mileage: " + String(currentMileage) + " km");
   if (diagnosticCodes != "") {
-    Serial.println("⚠️  DTC: " + diagnosticCodes);
+    Serial.println("DTC: " + diagnosticCodes);
   }
 }
 
-// ============================================================================
 // FSM STATE MANAGEMENT
-// ============================================================================
 
 void updateSystemState() {
   SystemState previousState = currentState;
@@ -252,7 +244,7 @@ void updateSystemState() {
   }
   
   if (previousState != currentState) {
-    Serial.println("🔄 State changed: " + getStateName(previousState) + " → " + getStateName(currentState));
+    Serial.println("State changed: " + getStateName(previousState) + " → " + getStateName(currentState));
     updateLEDs();
     
     // Notify Control Unit
@@ -287,9 +279,7 @@ void updateLEDs() {
   }
 }
 
-// ============================================================================
-// DATA SIGNING (VIN-BASED ECDSA)
-// ============================================================================
+// DATA SIGNING (VIN-BASED)
 
 String buildTelemetryPacket() {
   String packet = "";
@@ -306,31 +296,17 @@ String buildTelemetryPacket() {
 }
 
 String signData(String data) {
-  // Simplified signature using SHA256 hash + VIN
-  // In production, use proper ECDSA with mbedtls
-  
-  mbedtls_md_context_t ctx;
-  mbedtls_md_type_t md_type = MBEDTLS_MD_SHA256;
-  
-  mbedtls_md_init(&ctx);
-  mbedtls_md_setup(&ctx, mbedtls_md_info_from_type(md_type), 0);
-  mbedtls_md_starts(&ctx);
-  
-  // Hash data + VIN
+  // DJB2 hash algorithm - matches Arduino implementation
+  unsigned long hash = 5381;
   String dataWithVIN = data + String(VEHICLE_VIN);
-  mbedtls_md_update(&ctx, (const unsigned char*)dataWithVIN.c_str(), dataWithVIN.length());
   
-  unsigned char hash[32];
-  mbedtls_md_finish(&ctx, hash);
-  mbedtls_md_free(&ctx);
-  
-  // Convert to hex string
-  String signature = "";
-  for (int i = 0; i < 32; i++) {
-    char hex[3];
-    sprintf(hex, "%02x", hash[i]);
-    signature += String(hex);
+  for (unsigned int i = 0; i < dataWithVIN.length(); i++) {
+    hash = ((hash << 5) + hash) + dataWithVIN[i]; // hash * 33 + c
   }
   
-  return signature;
+  // Convert to hex string (8 characters)
+  char hashStr[9];
+  sprintf(hashStr, "%08lx", hash);
+  return String(hashStr);
 }
+  
