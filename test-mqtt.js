@@ -2,17 +2,17 @@
 // Quick test to verify MQTT broker connectivity
 
 const mqtt = require('mqtt');
-const config = require('./config');
 
-const client = mqtt.connect(`mqtt://${config.MQTT_BROKER}:${config.MQTT_PORT}`);
+// FIXED: Use proper function call syntax with parentheses
+const client = mqtt.connect('mqtt://localhost:1883');
 
 client.on('connect', () => {
-    console.log('✅ Connected to MQTT broker');
+    console.log('Connected to MQTT broker');
     
     // Subscribe to all vehicle topics
     client.subscribe('vehicle/#', (err) => {
         if (!err) {
-            console.log('✅ Subscribed to vehicle topics');
+            console.log('Subscribed to vehicle topics');
         }
     });
     
@@ -24,11 +24,12 @@ client.on('connect', () => {
 });
 
 client.on('message', (topic, message) => {
-    console.log(`📨 [${topic}] ${message.toString()}`);
+    // FIXED: Use proper template literal syntax
+    console.log(`[${topic}] ${message.toString()}`);
 });
 
 client.on('error', (err) => {
-    console.error('❌ MQTT Error:', err.message);
+    console.error('MQTT Error:', err.message);
 });
 
 // Keep running
