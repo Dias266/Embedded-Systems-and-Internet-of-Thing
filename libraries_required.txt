@@ -1,0 +1,22 @@
+# Arduino/ESP32 Libraries Required
+
+## ESP32 Libraries (Install via Arduino IDE Library Manager):
+1. WiFi (built-in)
+2. PubSubClient (by Nick O'Leary) - MQTT client
+3. DallasTemperature (by Miles Burton) - DS18B20 sensor
+4. OneWire (by Jim Studt) - One-wire protocol
+5. ArduinoJson (by Benoit Blanchon) - JSON handling
+
+## Arduino Libraries:
+1. LiquidCrystal (built-in) - LCD display
+2. Crypto (by Rhys Weatherley) - ECDSA verification
+   OR uECC (by Ken MacKay) - Alternative crypto library
+
+## Node.js Dependencies (in package.json):
+1. mqtt - MQTT client
+2. serialport - Serial communication
+3. express - HTTP server
+4. ws - WebSocket for dashboard
+5. body-parser - HTTP parsing
+
+Install: npm install mqtt serialport express ws body-parser
