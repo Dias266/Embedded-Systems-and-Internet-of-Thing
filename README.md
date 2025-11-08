@@ -1,4 +1,4 @@
-# VIN-Based Telematics Authentication System
+# VIN-Based Telematics Authentication and Secure Vehicle Data Transmission System
 
 **Secure IoT Vehicle Data Monitoring with Blockchain Integration**
 
@@ -254,6 +254,3 @@ MIT License - See LICENSE file for details
 
 **GitHub:** [https://github.com/Dias266/Embedded-Systems-and-Internet-of-Thing](https://github.com/Dias266/Embedded-Systems-and-Internet-of-Thing)
 
----
-
-**⭐ Star this repo if you find it useful!**
