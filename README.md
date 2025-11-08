@@ -4,8 +4,6 @@
 
 University of Bologna - Embedded Systems & IoT Course Project
 
----
-
 ## Overview
 
 This project implements a **4-subsystem IoT architecture** for secure vehicle telematics using VIN-based cryptographic authentication:
@@ -24,8 +22,6 @@ Authenticated data is forwarded to **Hyperledger Fabric blockchain** for immutab
 - Real-time web dashboard with live graphs
 - Blockchain integration for distributed systems
 
----
-
 ## Hardware Requirements
 
 ### ESP32 Subsystem
@@ -42,8 +38,6 @@ Authenticated data is forwarded to **Hyperledger Fabric blockchain** for immutab
 - 3x 220Ω resistors + 1x 10kΩ potentiometer
 - USB cable
 - Breadboard and jumper wires
-
----
 
 ## Software Requirements
 
@@ -62,8 +56,6 @@ Authenticated data is forwarded to **Hyperledger Fabric blockchain** for immutab
 ```bash
 npm install mqtt serialport @serialport/parser-readline express cors
 ```
-
----
 
 ## Quick Start
 
@@ -142,7 +134,6 @@ HTTP Server: http://localhost:3002
 Monitoring vehicle telemetry...
 ```
 
----
 
 ## System Architecture
 
@@ -161,8 +152,6 @@ ESP32 (Telematics) --MQTT--> Control Unit --HTTP--> Dashboard
 4. Arduino verifies signature, sends result back
 5. Control Unit stores authenticated data
 6. Dashboard fetches data via HTTP API and displays in real-time
-
----
 
 ## Troubleshooting
 
@@ -183,8 +172,6 @@ ESP32 (Telematics) --MQTT--> Control Unit --HTTP--> Dashboard
 ### Temperature Sensor Error
 - Add 4.7kΩ pull-up resistor between DS18B20 DATA and 3.3V
 - For testing without sensor, code uses default 25.0°C
-
----
 
 ## API Endpoints
 
@@ -248,12 +235,12 @@ Data exported via API for:
 
 ## Contributors
 
-**Dias Katrenov** - ESP32 Development, System Integration  
-**Mary Anne Selirio** - Arduino Development, Dashboard, Documentation
+**Dias Katrenov**   
+**Mary Anne Selirio**  
 
 **University of Bologna**  
 Embedded Systems and IoT Course  
-Professors: Ricci, Omicini, Golfarelli/Francia
+Professors: Alessandro Ricci 
 
 ---
 
